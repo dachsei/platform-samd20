@@ -1,0 +1,6 @@
+h
+loadbin ${TARGET}.bin, 0
+verifybin ${TARGET}.bin, 0
+r
+g
+qc
