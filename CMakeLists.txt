@@ -14,6 +14,7 @@ endif()
 
 add_library(platform-samd20 INTERFACE)
 target_sources(platform-samd20 INTERFACE "${CMAKE_CURRENT_LIST_DIR}/samd20/gcc/gcc/startup_samd20.c")
+target_include_directories(platform-samd20 INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
 target_compile_options(platform-samd20 INTERFACE -mcpu=cortex-m0plus -mthumb -ffunction-sections)
 target_link_libraries(platform-samd20 INTERFACE -mcpu=cortex-m0plus -mthumb -Wl,--gc-sections --specs=nano.specs --specs=nosys.specs)
 
