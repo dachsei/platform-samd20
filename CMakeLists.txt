@@ -13,6 +13,7 @@ if (NOT ${DEVICE} IN_LIST AVAILABLE_DEVICES)
 endif()
 
 add_library(platform-samd20 INTERFACE)
+target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
 target_sources(platform-samd20 INTERFACE "${CMAKE_CURRENT_LIST_DIR}/samd20/gcc/gcc/startup_samd20.c")
 target_include_directories(platform-samd20 INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
 target_compile_options(platform-samd20 INTERFACE -mcpu=cortex-m0plus -mthumb -ffunction-sections)
