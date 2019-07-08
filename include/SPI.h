@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <sam.h>
 #include "clocks.h"
+#include "utils.h"
 
 /*
  * Synchronous SPI Master
@@ -24,7 +25,7 @@ public:
 	)
 		: sercom{sercom}
 	{
-		unsigned sercomIndex = (sercom - SERCOM0) / (SERCOM1 - SERCOM0);
+		unsigned sercomIndex = getSercomIndex(sercom);
 		PM->APBCMASK.reg |= 1 << (PM_APBCMASK_SERCOM0_Pos + sercomIndex);
 		clkGen.routeToPeripheral(GCLK_CLKCTRL_ID_SERCOM0_CORE_Val + sercomIndex);
 

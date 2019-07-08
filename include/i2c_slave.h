@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <sam.h>
 #include "clocks.h"
+#include "utils.h"
 
 /**
  * @brief Simple I2cSlave
@@ -26,8 +27,8 @@ public:
 	)
 		: sercom{sercom}
 	{
+		unsigned sercomIndex = getSercomIndex(sercom);
 		generator32k.routeToPeripheral(GCLK_CLKCTRL_ID_SERCOMX_SLOW_Val);
-		unsigned sercomIndex = (sercom - SERCOM0) / (SERCOM1 - SERCOM0);
 		PM->APBCMASK.reg |= 1 << (PM_APBCMASK_SERCOM0_Pos + sercomIndex);
 
 		sercom->I2CS.CTRLA.reg = SERCOM_I2CS_CTRLA_MODE_I2C_SLAVE
