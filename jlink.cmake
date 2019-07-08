@@ -16,7 +16,7 @@ add_custom_command(OUTPUT ${TARGET}.bin
 	DEPENDS ${TARGET}
 )
 add_custom_target(flash
-	COMMAND ${JLINK_EXE} -device ${DEVICE} -speed 4000 -if SWD -CommanderScript ${CMAKE_CURRENT_BINARY_DIR}/flash.jlink
+	COMMAND ${JLINK_EXE} -device AT${DEVICE} -speed 4000 -if SWD -CommanderScript ${CMAKE_CURRENT_BINARY_DIR}/flash.jlink
 	DEPENDS ${TARGET}.bin
 )
 add_custom_target(debug-server COMMAND ${JLINK_GDBSERVER} -device AT${DEVICE} -speed 4000 -if SWD)
