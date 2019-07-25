@@ -100,3 +100,11 @@ public:
 private:
 	const unsigned frequency_;
 };
+
+class ReadWaitStateInit final {
+public:
+	ReadWaitStateInit(unsigned waitStates)
+	{
+		NVMCTRL->CTRLB.bit.RWS = waitStates;
+	}
+};

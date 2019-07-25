@@ -34,6 +34,8 @@ public:
 		InputPulldown
 	};
 
+	static constexpr unsigned InterruptPeripheral = 0;
+
 	void setMode(Mode mode)
 	{
 		switch (mode) {
@@ -62,6 +64,7 @@ public:
 	void setHigh() { PORT_IOBUS->Group[port].OUTSET.reg = 1 << pin; }
 	void setLow() { PORT_IOBUS->Group[port].OUTCLR.reg = 1 << pin; }
 	void toggle() { PORT_IOBUS->Group[port].OUTTGL.reg = 1 << pin; }
+	void write(bool value) { if (value) setHigh(); else setLow(); }
 	bool read() const { return (PORT->Group[port].IN.reg & (1 << pin)) != 0; }
 
 	/**
