@@ -5,6 +5,8 @@
 #include "clocks.h"
 #include "utils.h"
 
+namespace mcu {
+
 /*
  * Synchronous SPI Master
  */
@@ -25,7 +27,7 @@ public:
 	)
 		: sercom{sercom}
 	{
-		unsigned sercomIndex = getSercomIndex(sercom);
+		unsigned sercomIndex = util::getSercomIndex(sercom);
 		PM->APBCMASK.reg |= 1 << (PM_APBCMASK_SERCOM0_Pos + sercomIndex);
 		clkGen.routeToPeripheral(GCLK_CLKCTRL_ID_SERCOM0_CORE_Val + sercomIndex);
 
@@ -55,3 +57,5 @@ public:
 private:
 	Sercom* const sercom;
 };
+
+} // namespace mcu

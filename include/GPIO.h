@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <sam.h>
 
+namespace mcu {
+
 #if defined(__SAMD20E14__) || defined(__SAMD20E15__) || defined(__SAMD20E16__) || defined(__SAMD20E17__) || defined(__SAMD20E18__)
 #define __SAMD20E__
 #endif
@@ -95,3 +97,5 @@ public:
 #endif
 	const uint8_t pin;
 };
+
+} // namespace mcu

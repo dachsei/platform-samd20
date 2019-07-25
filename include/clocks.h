@@ -3,6 +3,8 @@
 #include <cassert>
 #include <samd20.h>
 
+namespace mcu {
+
 class ClockSource {
 public:
 	/// @return value to use inf GCLK_GENCTRL_SRC
@@ -108,3 +110,5 @@ public:
 		NVMCTRL->CTRLB.bit.RWS = waitStates;
 	}
 };
+
+} // namespace mcu
