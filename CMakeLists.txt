@@ -12,13 +12,19 @@ if (NOT ${DEVICE} IN_LIST AVAILABLE_DEVICES)
 	message(FATAL_ERROR "DEVICE must be one of ${AVAILABLE_DEVICES}")
 endif()
 
-add_library(platform-samd20 INTERFACE)
-target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
-target_sources(platform-samd20 INTERFACE "${CMAKE_CURRENT_LIST_DIR}/samd20/gcc/gcc/startup_samd20.c")
-target_include_directories(platform-samd20 INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
-target_compile_options(platform-samd20 INTERFACE -mcpu=cortex-m0plus -mthumb -ffunction-sections)
-target_link_libraries(platform-samd20 INTERFACE -mcpu=cortex-m0plus -mthumb -Wl,--gc-sections --specs=nano.specs --specs=nosys.specs)
-
-target_compile_definitions(platform-samd20 INTERFACE "-D__${DEVICE}__")
+add_library(platform-samd20 "")
 target_link_libraries(platform-samd20 INTERFACE "-T\"${CMAKE_CURRENT_LIST_DIR}/samd20/gcc/gcc/${DEVICE}_flash.ld\"")
-target_include_directories(platform-samd20 INTERFACE "${CMAKE_CURRENT_LIST_DIR}/CMSIS/Core/Include" "${CMAKE_CURRENT_LIST_DIR}/samd20/include")
+target_sources(platform-samd20 INTERFACE "${CMAKE_CURRENT_LIST_DIR}/samd20/gcc/gcc/startup_samd20.c")
+
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+target_compile_options(platform-samd20 PUBLIC -mcpu=cortex-m0plus -mthumb -ffunction-sections)
+target_link_libraries(platform-samd20 PUBLIC -mcpu=cortex-m0plus -mthumb -Wl,--gc-sections --specs=nano.specs --specs=nosys.specs)
+
+target_include_directories(platform-samd20 PUBLIC
+	${CMAKE_CURRENT_LIST_DIR}/include
+	${CMAKE_CURRENT_LIST_DIR}/GSL/include
+)
+target_compile_definitions(platform-samd20 PUBLIC "-D__${DEVICE}__")
+target_include_directories(platform-samd20 PUBLIC "${CMAKE_CURRENT_LIST_DIR}/CMSIS/Core/Include" "${CMAKE_CURRENT_LIST_DIR}/samd20/include")
+
+target_sources(platform-samd20 PRIVATE "${CMAKE_CURRENT_LIST_DIR}/src/flash_eeprom.cpp")
