@@ -1,64 +1,54 @@
 #include "flash_eeprom.h"
 #include <algorithm>
 
-inline void mcu::FlashEEPROM::writeByte(const uint8_t* flashAddress, uint8_t data) noexcept
+void mcu::FlashEEPROM::write(const std::byte* flashAddress, gsl::span<const std::byte> src) noexcept
 {
-	uint32_t* row = reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(flashAddress) & ~RowOffsetMask);
-	if(row != cacheTag){
+	uintptr_t row = reinterpret_cast<uintptr_t>(flashAddress) & ~RowOffsetMask;
+	if (row != cacheTag) {
 		cacheRow(row);
 	}
-	
+
 	size_t offset = reinterpret_cast<uintptr_t>(flashAddress) & RowOffsetMask;
-	cache[offset] = data;
-	cacheDirty = true;
+	if (offset + src.size() < RowSize) {
+		std::copy(src.begin(), src.end(), cache.begin() + offset);
+		cacheDirty = true;
+	} else {
+		size_t chunkSize = RowSize - offset;
+		std::copy(src.begin(), src.begin() + chunkSize, cache.begin() + offset);
+		cacheDirty = true;
+		write(flashAddress + chunkSize, src.subspan(chunkSize));
+	}
 }
 
-inline uint8_t mcu::FlashEEPROM::readByte(const uint8_t * flashAddress) noexcept
+void mcu::FlashEEPROM::read(const std::byte* flashAddress, gsl::span<std::byte> dst) noexcept
 {
-	uint32_t* row = reinterpret_cast<uint32_t*>(reinterpret_cast<uintptr_t>(flashAddress) & ~RowOffsetMask);
-	if(row != cacheTag){
+	uintptr_t row = reinterpret_cast<uintptr_t>(flashAddress) & ~RowOffsetMask;
+	if (row != cacheTag) {
 		cacheRow(row);
 	}
-	
+
 	size_t offset = reinterpret_cast<uintptr_t>(flashAddress) & RowOffsetMask;
-	return cache[offset];
-}
-
-void mcu::FlashEEPROM::writeData(const void* flashAddress, const void* data, size_t length) noexcept
-{
-	const uint8_t* flashIt = static_cast<const uint8_t*>(flashAddress);
-	const uint8_t* dataIt = static_cast<const uint8_t*>(data);
-	for(size_t i = 0; i < length; i++) {
-		writeByte(flashIt, *dataIt);
-		flashIt++;
-		dataIt++;
-	}
-}
-
-void mcu::FlashEEPROM::readData(const void* flashAddress, void* destination, size_t length) noexcept
-{
-	const uint8_t* flashIt = static_cast<const uint8_t*>(flashAddress);
-	uint8_t* destinationIt = static_cast<uint8_t*>(destination);
-	for(size_t i = 0; i < length; i++) {
-		*destinationIt = readByte(flashIt);
-		destinationIt++;
-		flashIt++;
+	if (offset + dst.size() < RowSize) {
+		std::copy(cache.begin() + offset, cache.begin() + offset + dst.size(), dst.begin());
+	} else {
+		size_t chunkSize = RowSize - offset;
+		std::copy(cache.begin() + offset, cache.begin() + offset + chunkSize, dst.begin());
+		read(flashAddress, dst.subspan(chunkSize));
 	}
 }
 
 void mcu::FlashEEPROM::commit() noexcept
 {
 	if(cacheDirty) {
-		NVMCTRL->ADDR.reg = reinterpret_cast<uintptr_t>(cacheTag) / 2;
+		NVMCTRL->ADDR.reg = cacheTag / 2;
 		NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMDEX_KEY | NVMCTRL_CTRLA_CMD_ER;
 		while(!NVMCTRL->INTFLAG.bit.READY);
 		
 		for(int i = 0; i < 4; i++) {
-			const size_t pageSizeInWords = FLASH_PAGE_SIZE / sizeof(*cache);
-			uint32_t* dst = const_cast<uint32_t*>(cacheTag + i * pageSizeInWords);
-			const uint32_t* src = cache + i * pageSizeInWords;
+			unsigned* dst = reinterpret_cast<unsigned*>(cacheTag + i * FLASH_PAGE_SIZE);
+			const unsigned* src = reinterpret_cast<unsigned*>(cache.data() + i * FLASH_PAGE_SIZE);
 
-			std::copy(src, src + pageSizeInWords, dst);
+			std::copy(src, src + FLASH_PAGE_SIZE / sizeof(unsigned), dst);
 			NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMDEX_KEY | NVMCTRL_CTRLA_CMD_WP;
 			while(!NVMCTRL->INTFLAG.bit.READY);
 		}
@@ -66,13 +56,15 @@ void mcu::FlashEEPROM::commit() noexcept
 	}
 }
 
-uint32_t mcu::FlashEEPROM::cache[RowSize / 4];
-const uint32_t* mcu::FlashEEPROM::cacheTag = nullptr;
+alignas(unsigned) std::array<std::byte, mcu::FlashEEPROM::RowSize> mcu::FlashEEPROM::cache;
+uintptr_t mcu::FlashEEPROM::cacheTag = 0;
 bool mcu::FlashEEPROM::cacheDirty = false;
 
-void mcu::FlashEEPROM::cacheRow(const uint32_t* rowStart) noexcept
+void mcu::FlashEEPROM::cacheRow(uintptr_t rowStart) noexcept
 {
 	commit();
-	std::copy(rowStart, rowStart + RowSize / sizeof(*rowStart), cache);
+	unsigned* rowStartPtr = reinterpret_cast<unsigned*>(rowStart);
+	unsigned* cachePtr = reinterpret_cast<unsigned*>(cache.data());
+	std::copy(rowStartPtr, rowStartPtr + RowSize / sizeof(unsigned), cachePtr);
 	cacheTag = rowStart;
 }
