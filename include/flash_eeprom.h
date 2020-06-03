@@ -33,7 +33,7 @@ public:
 	template <typename T>
 	static void read(const T* flashAddress, gsl::span<T> dst) noexcept
 	{
-		read(reinterpret_cast<const std::byte*>(flashAddress), gsl::as_bytes(dst));
+		read(reinterpret_cast<const std::byte*>(flashAddress), gsl::as_writeable_bytes(dst));
 	}
 
 	static void write(const std::byte* flashAddress, gsl::span<const std::byte> src) noexcept;
@@ -41,16 +41,24 @@ public:
 	
 	static void commit() noexcept;
 	static bool needsCommit() noexcept { return cacheDirty; }
-
-	static constexpr size_t RowSize = FLASH_PAGE_SIZE * 4;
-	static constexpr uintptr_t RowOffsetMask = RowSize - 1;
 	
 private:
-	alignas(unsigned) static std::array<std::byte, RowSize> cache;
-	static uintptr_t cacheTag;
+	using Page = std::array<unsigned, FLASH_PAGE_SIZE / sizeof(unsigned)>;
+	using Row = std::array<Page, 4>;
+
+	static constexpr size_t RowSize = sizeof(Row);
+	static constexpr uintptr_t RowOffsetMask = sizeof(Row) - 1;
+
+	union Cache {
+		std::array<std::byte, sizeof(Row)> bytes;
+		Row pages;
+	};
+	static Cache cache;
+	static Row* cacheTag;
 	static bool cacheDirty;
 	
-	static void cacheRow(uintptr_t rowStart) noexcept;
+	static void cacheRow(Row* row) noexcept;
+	static void copyPage(const Page& src, Page& dst) noexcept;
 };
 
 } // namespace mcu
