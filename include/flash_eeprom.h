@@ -15,13 +15,13 @@ public:
 	template <typename T>
 	static void write(const T* flashAddress, const T& src) noexcept
 	{
-		write(flashAddress, gsl::make_span(&src, 1));
+		write(flashAddress, gsl::span(&src, 1));
 	}
 	template <typename T>
 	static T read(const T* flashAddress) noexcept
 	{
 		T result;
-		read(flashAddress, gsl::make_span(&result, 1));
+		read(flashAddress, gsl::span(&result, 1));
 		return result;
 	}
 
@@ -33,7 +33,7 @@ public:
 	template <typename T>
 	static void read(const T* flashAddress, gsl::span<T> dst) noexcept
 	{
-		read(reinterpret_cast<const std::byte*>(flashAddress), gsl::as_writeable_bytes(dst));
+		read(reinterpret_cast<const std::byte*>(flashAddress), gsl::as_writable_bytes(dst));
 	}
 
 	static void write(const std::byte* flashAddress, gsl::span<const std::byte> src) noexcept;
